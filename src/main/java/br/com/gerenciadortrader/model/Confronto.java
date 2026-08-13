@@ -25,6 +25,12 @@ public class Confronto {
 
     private String times;
 
+    private String campeonato;
+
+    private String escudoCasa;
+
+    private String escudoVisitante;
+
     private BigDecimal odds;
 
     @Enumerated(EnumType.STRING)
