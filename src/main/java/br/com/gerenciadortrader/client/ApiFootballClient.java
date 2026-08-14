@@ -32,7 +32,7 @@ public class ApiFootballClient {
          * @return lista de {@link JogoResponseDTO} com os dados essenciais de cada
          *         partida
          */
-        @Cacheable(value = "jogos", key = "#data")
+        @Cacheable(value = "jogos", key = "#data", unless = "#result.isEmpty()")
         public List<JogoResponseDTO> buscarJogosDoDia(String data) {
                 ApiFootballWrapper wrapper = restClient.get()
                                 .uri("/fixtures?date={data}&timezone=America/Sao_Paulo", data)
