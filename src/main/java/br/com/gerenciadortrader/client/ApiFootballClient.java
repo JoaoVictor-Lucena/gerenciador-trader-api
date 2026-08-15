@@ -2,7 +2,6 @@ package br.com.gerenciadortrader.client;
 
 import br.com.gerenciadortrader.dto.JogoResponseDTO;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -27,12 +26,13 @@ public class ApiFootballClient {
 
         /**
          * Busca os jogos (fixtures) de uma data específica na API-Football.
+         * Chamado exclusivamente pelo job de sincronização {@code SincronizacaoPartidasService};
+         * o banco de dados local é o cache definitivo para as demais camadas.
          *
          * @param data data no formato 'YYYY-MM-DD'
          * @return lista de {@link JogoResponseDTO} com os dados essenciais de cada
          *         partida
          */
-        @Cacheable(value = "jogos", key = "#data")
         public List<JogoResponseDTO> buscarJogosDoDia(String data) {
                 ApiFootballWrapper wrapper = restClient.get()
                                 .uri("/fixtures?date={data}&timezone=America/Sao_Paulo", data)
