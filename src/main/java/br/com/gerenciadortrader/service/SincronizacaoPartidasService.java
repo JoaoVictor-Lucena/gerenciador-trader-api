@@ -6,7 +6,6 @@ import br.com.gerenciadortrader.model.Partida;
 import br.com.gerenciadortrader.repository.PartidaRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import jakarta.annotation.PostConstruct;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,7 +19,8 @@ import java.util.Optional;
  * Worker responsável por sincronizar antecipadamente os jogos da semana
  * com o banco de dados local, desacoplando o front-end da API externa.
  *
- * <p>O job roda diariamente às 05h (horário de Brasília) e cobre
+ * <p>
+ * O job roda diariamente às 05h (horário de Brasília) e cobre
  * a janela de hoje + 3 dias seguintes, garantindo que o cache local
  * esteja sempre atualizado antes do início do tráfego do dia.
  */
@@ -39,13 +39,15 @@ public class SincronizacaoPartidasService {
     /**
      * Sincroniza os jogos dos próximos {@value #JANELA_DIAS} dias (hoje inclusive).
      *
-     * <p>Dispara todo dia às 05:00 (America/Sao_Paulo). A lógica é um upsert:
+     * <p>
+     * Dispara todo dia às 05:00 (America/Sao_Paulo). A lógica é um upsert:
      * <ul>
-     *   <li>Jogo inexistente → persiste como nova {@link Partida}.</li>
-     *   <li>Jogo já existente → atualiza apenas o {@code status} (ex.: agendado → cancelado).</li>
+     * <li>Jogo inexistente → persiste como nova {@link Partida}.</li>
+     * <li>Jogo já existente → atualiza apenas o {@code status} (ex.: agendado →
+     * cancelado).</li>
      * </ul>
      */
-    @PostConstruct // TODO: remover após validação — apenas para teste em tempo de startup
+
     @Scheduled(cron = "0 0 5 * * *", zone = "America/Sao_Paulo")
     @Transactional
     public void sincronizarJogosDaSemana() {
@@ -67,7 +69,8 @@ public class SincronizacaoPartidasService {
                 Optional<Partida> existente = partidaRepository.findByApiId(jogo.id());
 
                 if (existente.isPresent()) {
-                    // Upsert — atualiza somente o status para refletir mudanças (adiamento, cancelamento etc.)
+                    // Upsert — atualiza somente o status para refletir mudanças (adiamento,
+                    // cancelamento etc.)
                     Partida partida = existente.get();
                     partida.setStatus(jogo.status());
                     partidaRepository.save(partida);
