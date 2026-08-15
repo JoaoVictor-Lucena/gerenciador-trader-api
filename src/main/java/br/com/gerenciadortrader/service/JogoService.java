@@ -16,7 +16,8 @@ public class JogoService {
 
     /**
      * Retorna os jogos de uma data específica consultando o banco de dados local.
-     * Os dados são previamente sincronizados pelo {@code SincronizacaoPartidasService},
+     * Os dados são previamente sincronizados pelo
+     * {@code SincronizacaoPartidasService},
      * isolando completamente o front-end da API externa.
      *
      * @param data data no formato {@code yyyy-MM-dd}
@@ -30,7 +31,8 @@ public class JogoService {
     }
 
     /**
-     * Converte uma entidade {@link Partida} para o DTO de saída {@link JogoResponseDTO},
+     * Converte uma entidade {@link Partida} para o DTO de saída
+     * {@link JogoResponseDTO},
      * preservando o contrato esperado pelo Controller e pelo front-end.
      *
      * @param partida entidade persistida no banco local

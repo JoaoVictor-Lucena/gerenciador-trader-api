@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
@@ -30,6 +32,7 @@ import java.util.Optional;
 public class SincronizacaoPartidasService {
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private static final ZoneId ZONE_SP = ZoneId.of("America/Sao_Paulo");
     /** Hoje + quantos dias à frente o job deve cobrir. */
     private static final int JANELA_DIAS = 4;
 
@@ -65,6 +68,14 @@ public class SincronizacaoPartidasService {
             List<JogoResponseDTO> jogos = apiFootballClient.buscarJogosDoDia(dataFormatada);
             log.info("[Sincronização] {} jogos encontrados para {}.", jogos.size(), dataFormatada);
 
+            // Anti-bloqueio: aguarda 2 s entre chamadas para respeitar o rate limit da API
+            try {
+                Thread.sleep(2_000);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                log.warn("[Sincronização] Thread interrompida durante o sleep de rate limit.", ie);
+            }
+
             for (JogoResponseDTO jogo : jogos) {
                 Optional<Partida> existente = partidaRepository.findByApiId(jogo.id());
 
@@ -77,9 +88,16 @@ public class SincronizacaoPartidasService {
                     totalAtualizados++;
                 } else {
                     // Novo jogo — persiste todos os campos
+                    // Converte o timestamp UTC da API para o fuso de Brasília antes de persistir,
+                    // garantindo que findByDataStartingWith funcione para jogos noturnos.
+                    String dataHoraBrasilia = ZonedDateTime
+                            .parse(jogo.dataHora()) // parse do ISO-8601 com offset UTC
+                            .withZoneSameInstant(ZONE_SP) // converte para America/Sao_Paulo
+                            .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME); // formata de volta p/ ISO-8601
+
                     Partida nova = Partida.builder()
                             .apiId(jogo.id())
-                            .data(jogo.dataHora())
+                            .data(dataHoraBrasilia)
                             .status(jogo.status())
                             .liga(jogo.liga())
                             .timeCasa(jogo.timeCasa())

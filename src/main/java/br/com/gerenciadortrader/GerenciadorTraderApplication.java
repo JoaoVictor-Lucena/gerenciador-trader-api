@@ -11,7 +11,7 @@ import java.util.TimeZone;
 @SpringBootApplication
 @EnableCaching
 @EnableScheduling
-public class 	GerenciadorTraderApplication {
+public class GerenciadorTraderApplication {
 
 	@PostConstruct
 	void init() {
