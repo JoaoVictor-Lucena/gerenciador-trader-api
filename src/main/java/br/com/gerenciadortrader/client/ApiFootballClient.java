@@ -26,7 +26,8 @@ public class ApiFootballClient {
 
         /**
          * Busca os jogos (fixtures) de uma data específica na API-Football.
-         * Chamado exclusivamente pelo job de sincronização {@code SincronizacaoPartidasService};
+         * Chamado exclusivamente pelo job de sincronização
+         * {@code SincronizacaoPartidasService};
          * o banco de dados local é o cache definitivo para as demais camadas.
          *
          * @param data data no formato 'YYYY-MM-DD'
