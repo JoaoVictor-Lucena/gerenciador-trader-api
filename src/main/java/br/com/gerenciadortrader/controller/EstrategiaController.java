@@ -1,7 +1,5 @@
 package br.com.gerenciadortrader.controller;
 
-import br.com.gerenciadortrader.client.ApiFootballClient;
-import br.com.gerenciadortrader.dto.JogoResponseDTO;
 import br.com.gerenciadortrader.model.Estrategia;
 import br.com.gerenciadortrader.service.EstrategiaService;
 import lombok.RequiredArgsConstructor;
