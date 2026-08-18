@@ -10,59 +10,65 @@ import java.util.List;
 @Service
 public class ApiFootballClient {
 
-    /**
-     * Header de autenticação exigido pela football-data.org v4.
-     * Diferente da api-sports (x-apisports-key), aqui é {@code X-Auth-Token}.
-     */
-    private static final String HEADER_AUTH = "X-Auth-Token";
+        /**
+         * Header de autenticação da API-Football (api-sports v3).
+         * A football-data.org usava {@code X-Auth-Token}; aqui voltamos ao original.
+         */
+        private static final String HEADER_API_KEY = "x-apisports-key";
 
-    private final RestClient restClient;
+        private final RestClient restClient;
 
-    public ApiFootballClient(
-            @Value("${api.football.url}") String baseUrl,
-            @Value("${api.football.key}") String apiKey) {
+        public ApiFootballClient(
+                        @Value("${api.football.url}") String baseUrl,
+                        @Value("${api.football.key}") String apiKey) {
 
-        this.restClient = RestClient.builder()
-                .baseUrl(baseUrl)
-                .defaultHeader(HEADER_AUTH, apiKey)
-                .build();
-    }
-
-    /**
-     * Busca as partidas de uma data específica na football-data.org v4.
-     *
-     * <p>Chamado exclusivamente pelo job de sincronização
-     * {@code SincronizacaoPartidasService}; o banco de dados local é o cache
-     * definitivo para as demais camadas.
-     *
-     * <p>O endpoint aceita {@code dateFrom} e {@code dateTo} no formato
-     * {@code YYYY-MM-DD}. Passamos a mesma data nos dois parâmetros para obter
-     * apenas os jogos do dia solicitado.
-     *
-     * @param data data no formato {@code YYYY-MM-DD}
-     * @return lista de {@link JogoResponseDTO} com os dados essenciais de cada partida
-     */
-    public List<JogoResponseDTO> buscarJogosDoDia(String data) {
-        ApiFootballWrapper wrapper = restClient.get()
-                .uri("/matches?dateFrom={data}&dateTo={data}", data, data)
-                .retrieve()
-                .body(ApiFootballWrapper.class);
-
-        if (wrapper == null || wrapper.matches() == null) {
-            return List.of();
+                this.restClient = RestClient.builder()
+                                .baseUrl(baseUrl)
+                                .defaultHeader(HEADER_API_KEY, apiKey)
+                                .build();
         }
 
-        return wrapper.matches().stream()
-                .map(match -> new JogoResponseDTO(
-                        match.id(),
-                        match.utcDate(),                   // ISO-8601 UTC — será convertido para BRT no SincronizacaoPartidasService
-                        match.status(),                    // TIMED | IN_PLAY | FINISHED | CANCELLED | POSTPONED...
-                        match.competition().name(),
-                        match.homeTeam().name(),
-                        match.awayTeam().name(),
-                        match.homeTeam().crest(),          // campo "crest" na v4 (não "logo")
-                        match.awayTeam().crest()))
-                .toList();
-    }
-}
+        /**
+         * Busca os jogos (fixtures) de uma data específica na API-Football (api-sports
+         * v3).
+         *
+         * <p>
+         * Chamado exclusivamente pelo job de sincronização
+         * {@code SincronizacaoPartidasService}; o banco de dados local é o cache
+         * definitivo para as demais camadas.
+         *
+         * <p>
+         * O parâmetro {@code timezone=America/Sao_Paulo} faz a api-sports retornar
+         * o campo {@code fixture.date} já no fuso de Brasília (ex.:
+         * {@code 2026-08-18T20:00:00-03:00}), eliminando a necessidade de conversão
+         * adicional. A transformação {@code ZonedDateTime} no Service permanece como
+         * salvaguarda idempotente para eventuais inconsistências.
+         *
+         * @param data data no formato {@code YYYY-MM-DD}
+         * @return lista de {@link JogoResponseDTO} com os dados essenciais de cada
+         *         partida
+         */
+        public List<JogoResponseDTO> buscarJogosDoDia(String data) {
+                ApiFootballWrapper wrapper = restClient.get()
+                                .uri("/fixtures?date={data}&timezone=America/Sao_Paulo", data)
+                                .retrieve()
+                                .body(ApiFootballWrapper.class);
 
+                if (wrapper == null || wrapper.response() == null) {
+                        return List.of();
+                }
+
+                return wrapper.response().stream()
+                                .map(item -> new JogoResponseDTO(
+                                                item.fixture().id(),
+                                                item.fixture().date(), // já em BRT graças ao timezone param
+                                                item.fixture().status().statusCurto(), // NS, 1H, HT, 2H, FT, PST,
+                                                                                       // CANC...
+                                                item.league().name(),
+                                                item.teams().home().name(),
+                                                item.teams().away().name(),
+                                                item.teams().home().logo(),
+                                                item.teams().away().logo()))
+                                .toList();
+        }
+}

@@ -89,13 +89,14 @@ public class SincronizacaoPartidasService {
                     partidaRepository.save(partida);
                     totalAtualizados++;
                 } else {
-                    // Novo jogo — persiste todos os campos
-                    // Converte o timestamp UTC da API para o fuso de Brasília antes de persistir,
-                    // garantindo que findByDataStartingWith funcione para jogos noturnos.
+                    // Novo jogo — persiste todos os campos.
+                    // A api-sports já devolve fixture.date em BRT (timezone param),
+                    // mas aplicamos ZonedDateTime como salvaguarda idempotente:
+                    // se o offset já for -03:00, withZoneSameInstant é no-op seguro.
                     String dataHoraBrasilia = ZonedDateTime
-                            .parse(jogo.dataHora()) // parse do ISO-8601 com offset UTC
-                            .withZoneSameInstant(ZONE_SP) // converte para America/Sao_Paulo
-                            .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME); // formata de volta p/ ISO-8601
+                            .parse(jogo.dataHora()) // parse ISO-8601 com offset (ex: -03:00)
+                            .withZoneSameInstant(ZONE_SP) // garante fuso America/Sao_Paulo
+                            .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
 
                     Partida nova = Partida.builder()
                             .apiId(jogo.id())
