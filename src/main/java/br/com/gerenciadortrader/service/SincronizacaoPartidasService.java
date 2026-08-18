@@ -4,6 +4,7 @@ import br.com.gerenciadortrader.client.ApiFootballClient;
 import br.com.gerenciadortrader.dto.JogoResponseDTO;
 import br.com.gerenciadortrader.model.Partida;
 import br.com.gerenciadortrader.repository.PartidaRepository;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -53,6 +54,7 @@ public class SincronizacaoPartidasService {
 
     @Scheduled(cron = "0 0 5 * * *", zone = "America/Sao_Paulo")
     @Transactional
+    @PostConstruct
     public void sincronizarJogosDaSemana() {
         log.info("[Sincronização] Iniciando job de sincronização de partidas...");
 

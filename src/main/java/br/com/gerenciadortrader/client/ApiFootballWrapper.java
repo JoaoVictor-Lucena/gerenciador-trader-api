@@ -1,51 +1,57 @@
 package br.com.gerenciadortrader.client;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
 /**
- * DTOs internos para desserialização da resposta bruta da API-Football.
- * Mapeiam apenas os campos necessários; o restante é ignorado
- * via @JsonIgnoreProperties.
+ * DTOs internos para desserialização da resposta bruta da football-data.org v4.
+ *
+ * <p>Estrutura do endpoint {@code GET /v4/matches?dateFrom={data}&dateTo={data}}:
+ * <pre>
+ * {
+ *   "matches": [
+ *     {
+ *       "id": 123456,
+ *       "utcDate": "2026-08-18T19:00:00Z",
+ *       "status": "TIMED",
+ *       "competition": { "name": "Brasileirão Série A" },
+ *       "homeTeam":    { "name": "Flamengo", "crest": "https://crests.football-data.org/71.svg" },
+ *       "awayTeam":    { "name": "Palmeiras", "crest": "https://crests.football-data.org/72.svg" }
+ *     }
+ *   ]
+ * }
+ * </pre>
+ *
+ * <p>Status possíveis na v4: {@code TIMED, SCHEDULED, IN_PLAY, PAUSED, FINISHED,
+ * CANCELLED, SUSPENDED, POSTPONED}. Campos não mapeados são ignorados via
+ * {@code @JsonIgnoreProperties}.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record ApiFootballWrapper(List<FixtureItem> response) {
+public record ApiFootballWrapper(List<MatchItem> matches) {
 
-        @JsonIgnoreProperties(ignoreUnknown = true)
-        public record FixtureItem(
-                        FixtureDetails fixture,
-                        LeagueInfo league,
-                        TeamsInfo teams) {
-        }
+    /** Representa um elemento do array {@code matches}. */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record MatchItem(
+            Long id,
+            String utcDate,
+            String status,
+            CompetitionInfo competition,
+            TeamInfo homeTeam,
+            TeamInfo awayTeam) {
+    }
 
-        @JsonIgnoreProperties(ignoreUnknown = true)
-        public record FixtureDetails(
-                        @JsonProperty("id") Long id,
-                        @JsonProperty("date") String date,
-                        @JsonProperty("status") StatusInfo status) {
-        }
+    /** Subrecord para o campo {@code competition}. */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record CompetitionInfo(String name) {
+    }
 
-        @JsonIgnoreProperties(ignoreUnknown = true)
-        public record StatusInfo(
-                        // "short" é palavra reservada em Java — mapeamos com @JsonProperty
-                        @JsonProperty("short") String statusCurto) {
-        }
-
-        @JsonIgnoreProperties(ignoreUnknown = true)
-        public record LeagueInfo(String name) {
-        }
-
-        @JsonIgnoreProperties(ignoreUnknown = true)
-        public record TeamsInfo(
-                        @JsonProperty("home") TeamInfo home,
-                        @JsonProperty("away") TeamInfo away) {
-        }
-
-        @JsonIgnoreProperties(ignoreUnknown = true)
-        public record TeamInfo(
-                        @JsonProperty("name") String name,
-                        @JsonProperty("logo") String logo) {
-        }
+    /**
+     * Subrecord reutilizado tanto para {@code homeTeam} quanto para {@code awayTeam}.
+     * O campo do escudo na v4 é {@code crest} (e não {@code logo} como na api-sports).
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record TeamInfo(String name, String crest) {
+    }
 }
+
